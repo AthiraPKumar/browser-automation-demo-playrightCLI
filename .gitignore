@@ -1,0 +1,19 @@
+node_modules/
+test-results/
+playwright-report/
+
+# Generated output files
+dentists-berlin.json
+dentists-berlin.csv
+diag-detail.html
+diag-detail.png
+dentists-berlin-maps.png
+dentists-berlin-search.png
+demo-01-landing.png
+demo-02-get-started.png
+demo-03-search.png
+example-com.png
+screenshot.png
+
+# TypeScript build cache
+*.tsbuildinfo
