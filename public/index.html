@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PLAYER SETUP // ONBOARD.EXE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #080d14;
+      --neon:        #00f5ff;
+      --neon-dim:    rgba(0,245,255,0.65);
+      --neon-glow:   rgba(0,245,255,0.28);
+      --neon-glow2:  rgba(0,245,255,0.1);
+      --hot:         #ff2d55;
+      --hot-glow:    rgba(255,45,85,0.45);
+      --text:        #c8d8f0;
+      --muted:       rgba(150,185,230,0.48);
+      --chip-off:    rgba(0,245,255,0.05);
+      --chip-border: rgba(0,245,255,0.22);
+      --grid-c:      rgba(0,245,255,0.038);
+      --progress-h:  4px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Rajdhani', sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(var(--grid-c) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-c) 1px, transparent 1px);
+      background-size: 48px 48px;
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* Scanlines */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.07) 3px,
+        rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* Vignette */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0,0,0,0.55) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Progress bar ── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: var(--progress-h);
+      background: linear-gradient(90deg, var(--neon-dim), var(--neon));
+      width: 0%;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+      box-shadow: 0 0 10px var(--neon), 0 0 22px var(--neon-glow);
+    }
+    /* Segmented tick-marks */
+    #progress-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 6px,
+        rgba(8,13,20,0.35) 6px,
+        rgba(8,13,20,0.35) 8px
+      );
+    }
+
+    /* ── HUD labels ── */
+    #step-counter {
+      position: fixed;
+      top: 18px; right: 24px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      color: var(--neon);
+      text-shadow: 0 0 10px var(--neon-glow);
+      z-index: 100;
+    }
+
+    #game-tag {
+      position: fixed;
+      top: 18px; left: 24px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.24em;
+      color: var(--muted);
+      text-transform: uppercase;
+      z-index: 100;
+    }
+
+    /* ── Viewport ── */
+    #viewport {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    /* Corner brackets */
+    #viewport::before, #viewport::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: rgba(0,245,255,0.32);
+      border-style: solid;
+    }
+    #viewport::before { top: 32px; left: 32px; border-width: 2px 0 0 2px; }
+    #viewport::after  { bottom: 32px; right: 32px; border-width: 0 2px 2px 0; }
+
+    /* ── Slides ── */
+    .slide {
+      position: absolute;
+      width: 100%;
+      max-width: 660px;
+      padding: 0 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      opacity: 0;
+      transform: translateY(48px);
+      pointer-events: none;
+      transition: opacity 0.42s ease, transform 0.42s cubic-bezier(0.22,1,0.36,1);
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+    .slide.exit-up {
+      opacity: 0;
+      transform: translateY(-48px);
+      pointer-events: none;
+    }
+
+    /* ── Question number badge ── */
+    .q-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: var(--neon);
+      text-shadow: 0 0 12px var(--neon-glow);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .q-num::before { content: '▶'; font-size: 0.46rem; }
+    .q-num span { font-size: 0.56rem; color: var(--muted); font-weight: 400; }
+
+    /* ── Question title ── */
+    .q-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.2rem, 3.4vw, 1.95rem);
+      font-weight: 700;
+      line-height: 1.35;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+
+    /* Subtle glitch on active title */
+    @keyframes glitch {
+      0%, 91%, 100% { text-shadow: none; }
+      92% { text-shadow: -2px 0 var(--hot), 2px 0 var(--neon); }
+      93% { text-shadow: 2px 0 var(--hot), -2px 0 var(--neon); }
+      94% { text-shadow: none; }
+    }
+    .slide.active .q-title { animation: glitch 9s infinite 3s; }
+
+    /* ── Hint ── */
+    .q-hint {
+      font-size: 0.92rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: -10px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Text / tel input ── */
+    .q-input {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid rgba(0,245,255,0.2);
+      outline: none;
+      color: var(--neon);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 10px 0;
+      width: 100%;
+      transition: border-color 0.25s, text-shadow 0.25s;
+      caret-color: var(--neon);
+    }
+    .q-input::placeholder { color: rgba(0,245,255,0.18); font-weight: 400; }
+    .q-input:focus {
+      border-bottom-color: var(--neon);
+      text-shadow: 0 0 14px var(--neon-glow);
+    }
+
+    /* ── Textarea ── */
+    .q-textarea {
+      background: rgba(0,245,255,0.03);
+      border: 1.5px solid rgba(0,245,255,0.18);
+      border-radius: 2px;
+      color: var(--neon);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: 16px 18px;
+      width: 100%;
+      min-height: 130px;
+      resize: none;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      caret-color: var(--neon);
+      line-height: 1.6;
+    }
+    .q-textarea::placeholder { color: rgba(0,245,255,0.18); }
+    .q-textarea:focus {
+      border-color: var(--neon);
+      box-shadow: 0 0 18px var(--neon-glow2), inset 0 0 12px rgba(0,245,255,0.04);
+    }
+
+    /* ── Chip group ── */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    /* ── Chips ── */
+    .chip {
+      cursor: pointer;
+      padding: 8px 18px;
+      border-radius: 2px;
+      border: 1.5px solid var(--chip-border);
+      background: var(--chip-off);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      text-transform: uppercase;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
+      user-select: none;
+    }
+    .chip:hover {
+      background: rgba(0,245,255,0.12);
+      border-color: var(--neon-dim);
+      color: var(--neon);
+      transform: translateY(-1px);
+    }
+    .chip.selected {
+      background: var(--neon);
+      border-color: var(--neon);
+      color: var(--bg);
+      font-weight: 700;
+      box-shadow: 0 0 16px var(--neon-glow), 0 0 32px var(--neon-glow2);
+      transform: scale(1.04);
+    }
+
+    /* ── CTA row ── */
+    .cta-row { display: flex; align-items: center; gap: 16px; }
+
+    /* ── Continue button ── */
+    .btn-continue {
+      cursor: pointer;
+      padding: 11px 26px;
+      border-radius: 2px;
+      border: none;
+      background: var(--neon);
+      color: var(--bg);
+      font-family: 'Orbitron', monospace;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 0 20px var(--neon-glow), 0 2px 0 rgba(0,0,0,0.4);
+    }
+    .btn-continue:hover {
+      background: #40faff;
+      transform: translateY(-1px);
+      box-shadow: 0 0 30px var(--neon-glow), 0 3px 0 rgba(0,0,0,0.3);
+    }
+    .btn-continue:active { transform: translateY(0); box-shadow: none; }
+
+    /* ── Enter hint ── */
+    .enter-hint {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+    .enter-hint kbd {
+      background: rgba(0,245,255,0.08);
+      border: 1px solid rgba(0,245,255,0.28);
+      border-radius: 2px;
+      padding: 2px 7px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.56rem;
+      color: var(--neon);
+    }
+
+    /* ── Optional label ── */
+    .optional-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.56rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+
+    /* ── Confirmation screen ── */
+    #confirm-slide {
+      text-align: center;
+      gap: 28px;
+      align-items: center;
+    }
+    .checkmark-wrap {
+      display: flex;
+      justify-content: center;
+      filter: drop-shadow(0 0 16px var(--neon)) drop-shadow(0 0 40px var(--neon-glow));
+    }
+    .checkmark-circle {
+      width: 84px;
+      height: 84px;
+      transform: rotate(45deg);
+      border: 2px solid var(--neon);
+      background: rgba(0,245,255,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pop 0.55s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes pop {
+      from { transform: rotate(45deg) scale(0.3); opacity: 0; }
+      to   { transform: rotate(45deg) scale(1);   opacity: 1; }
+    }
+    .checkmark-circle svg {
+      width: 38px;
+      height: 38px;
+      transform: rotate(-45deg);
+    }
+
+    .confirm-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.3rem, 3.8vw, 2.1rem);
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: var(--neon);
+      text-shadow: 0 0 20px var(--neon-glow), 0 0 50px var(--neon-glow2);
+      text-transform: uppercase;
+    }
+    .confirm-sub {
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 420px;
+      margin: 0 auto;
+      letter-spacing: 0.04em;
+    }
+
+    .restart-btn {
+      display: inline-block;
+      cursor: pointer;
+      padding: 11px 28px;
+      border-radius: 2px;
+      border: 1.5px solid rgba(0,245,255,0.25);
+      background: rgba(0,245,255,0.06);
+      color: var(--text);
+      font-family: 'Orbitron', monospace;
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .restart-btn:hover {
+      background: rgba(0,245,255,0.13);
+      border-color: var(--neon-dim);
+      color: var(--neon);
+    }
+
+    /* ── Validation shake ── */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-8px); }
+      40%,80% { transform: translateX(8px); }
+    }
+    .shake { animation: shake 0.35s ease; }
+
+    /* ── Error text ── */
+    .error-msg {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.84rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      color: var(--hot);
+      text-shadow: 0 0 8px var(--hot-glow);
+      min-height: 1rem;
+      transition: opacity 0.2s;
+    }
+    .error-msg:empty { opacity: 0; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="step-counter"></div>
+<div id="game-tag">ONBOARD.EXE</div>
+
+<div id="viewport">
+
+  <!-- Q1: First name -->
+  <div class="slide" id="slide-0">
+    <div class="q-num">01 <span>/ 12</span></div>
+    <h2 class="q-title">What's your first name?</h2>
+    <input class="q-input" type="text" placeholder="Player_Name" autocomplete="off" data-field="firstName" />
+    <div class="error-msg" id="err-0"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q2: Last name -->
+  <div class="slide" id="slide-1">
+    <div class="q-num">02 <span>/ 12</span></div>
+    <h2 class="q-title">And your last name?</h2>
+    <input class="q-input" type="text" placeholder="Surname" autocomplete="off" data-field="lastName" />
+    <div class="error-msg" id="err-1"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q3: Phone -->
+  <div class="slide" id="slide-2">
+    <div class="q-num">03 <span>/ 12</span></div>
+    <h2 class="q-title">What's your phone number?</h2>
+    <p class="q-hint">Encrypted comms channel — for your account only.</p>
+    <input class="q-input" type="tel" placeholder="+1 (555) 000-0000" autocomplete="off" data-field="phone" />
+    <div class="error-msg" id="err-2"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q4: Business name -->
+  <div class="slide" id="slide-3">
+    <div class="q-num">04 <span>/ 12</span></div>
+    <h2 class="q-title">What's the name of your business?</h2>
+    <input class="q-input" type="text" placeholder="Corp_ID" autocomplete="off" data-field="business" />
+    <div class="error-msg" id="err-3"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q5: Industry -->
+  <div class="slide" id="slide-4">
+    <div class="q-num">05 <span>/ 12</span></div>
+    <h2 class="q-title">What industry are you in?</h2>
+    <div class="chip-group" data-field="industry">
+      <button class="chip" data-value="Tech">Technology</button>
+      <button class="chip" data-value="Healthcare">Healthcare</button>
+      <button class="chip" data-value="Finance">Finance</button>
+      <button class="chip" data-value="Retail">Retail</button>
+      <button class="chip" data-value="Education">Education</button>
+      <button class="chip" data-value="Real Estate">Real Estate</button>
+      <button class="chip" data-value="Other">Other</button>
+    </div>
+    <div class="error-msg" id="err-4"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q6: Company size -->
+  <div class="slide" id="slide-5">
+    <div class="q-num">06 <span>/ 12</span></div>
+    <h2 class="q-title">How many people work at your company?</h2>
+    <div class="chip-group" data-field="size">
+      <button class="chip" data-value="Just me">Solo Operator</button>
+      <button class="chip" data-value="2-10">2–10</button>
+      <button class="chip" data-value="11-50">11–50</button>
+      <button class="chip" data-value="51-200">51–200</button>
+      <button class="chip" data-value="200+">200+</button>
+    </div>
+    <div class="error-msg" id="err-5"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q7: Primary goal -->
+  <div class="slide" id="slide-6">
+    <div class="q-num">07 <span>/ 12</span></div>
+    <h2 class="q-title">What's your primary goal with us?</h2>
+    <div class="chip-group" data-field="goal">
+      <button class="chip" data-value="Growth">Business growth</button>
+      <button class="chip" data-value="Efficiency">Operational efficiency</button>
+      <button class="chip" data-value="Cost savings">Cut costs</button>
+      <button class="chip" data-value="Brand awareness">Brand awareness</button>
+      <button class="chip" data-value="Other">Something else</button>
+    </div>
+    <div class="error-msg" id="err-6"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q8: Biggest challenge -->
+  <div class="slide" id="slide-7">
+    <div class="q-num">08 <span>/ 12</span></div>
+    <h2 class="q-title">What's your biggest challenge right now?</h2>
+    <p class="q-hint">Be as specific as you'd like — precision improves targeting.</p>
+    <textarea class="q-textarea" placeholder="e.g. We're struggling to convert leads into customers…" data-field="challenge"></textarea>
+    <div class="error-msg" id="err-7"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">press <kbd>Ctrl+Enter ↵</kbd> to advance</span>
+    </div>
+  </div>
+
+  <!-- Q9: How did you hear -->
+  <div class="slide" id="slide-8">
+    <div class="q-num">09 <span>/ 12</span></div>
+    <h2 class="q-title">How did you hear about us?</h2>
+    <div class="chip-group" data-field="source">
+      <button class="chip" data-value="Google">Google search</button>
+      <button class="chip" data-value="Referral">A referral</button>
+      <button class="chip" data-value="Social media">Social media</button>
+      <button class="chip" data-value="Event">Event or conference</button>
+      <button class="chip" data-value="Ad">Online ad</button>
+      <button class="chip" data-value="Other">Other</button>
+    </div>
+    <div class="error-msg" id="err-8"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q10: Budget -->
+  <div class="slide" id="slide-9">
+    <div class="q-num">10 <span>/ 12</span></div>
+    <h2 class="q-title">What's your monthly budget?</h2>
+    <div class="chip-group" data-field="budget">
+      <button class="chip" data-value="<$1k">Under $1,000</button>
+      <button class="chip" data-value="$1k-5k">$1,000 – $5,000</button>
+      <button class="chip" data-value="$5k-20k">$5,000 – $20,000</button>
+      <button class="chip" data-value="$20k+">$20,000+</button>
+      <button class="chip" data-value="Not sure">Not sure yet</button>
+    </div>
+    <div class="error-msg" id="err-9"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q11: Timeline -->
+  <div class="slide" id="slide-10">
+    <div class="q-num">11 <span>/ 12</span></div>
+    <h2 class="q-title">What's your timeline to get started?</h2>
+    <div class="chip-group" data-field="timeline">
+      <button class="chip" data-value="ASAP">Right away</button>
+      <button class="chip" data-value="1-3mo">1–3 months</button>
+      <button class="chip" data-value="3-6mo">3–6 months</button>
+      <button class="chip" data-value="Exploring">Just exploring</button>
+    </div>
+    <div class="error-msg" id="err-10"></div>
+    <div class="cta-row">
+      <button class="btn-continue">Continue &rarr;</button>
+      <span class="enter-hint">or press <kbd>Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Q12: Anything else (optional) -->
+  <div class="slide" id="slide-11">
+    <div class="q-num">12 <span>/ 12</span></div>
+    <h2 class="q-title">Anything else you'd like us to know?</h2>
+    <span class="optional-label">// Optional</span>
+    <textarea class="q-textarea" placeholder="Additional intel — share anything that would help us serve you better…" data-field="notes"></textarea>
+    <div class="cta-row">
+      <button class="btn-continue">Submit &rarr;</button>
+      <span class="enter-hint">or press <kbd>Ctrl+Enter ↵</kbd></span>
+    </div>
+  </div>
+
+  <!-- Confirmation -->
+  <div class="slide" id="confirm-slide">
+    <div class="checkmark-wrap">
+      <div class="checkmark-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00f5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+    </div>
+    <h2 class="confirm-title" id="confirm-title">Mission Complete!</h2>
+    <p class="confirm-sub" id="confirm-sub">
+      Briefing received. Your profile has been locked in — our operators will make contact shortly.
+    </p>
+    <button class="restart-btn" id="restart-btn">[ Play Again ]</button>
+  </div>
+
+</div><!-- /viewport -->
+
+<script>
+  const TOTAL = 12;
+  let current = 0;
+  const answers = {};
+
+  const slides = [...document.querySelectorAll('.slide:not(#confirm-slide)')];
+  const confirmSlide = document.getElementById('confirm-slide');
+  const progressBar = document.getElementById('progress-bar');
+  const stepCounter = document.getElementById('step-counter');
+
+  function updateProgress(index) {
+    const pct = (index / TOTAL) * 100;
+    progressBar.style.width = pct + '%';
+    if (index < TOTAL) {
+      stepCounter.textContent = '[ ' + (index + 1) + ' / ' + TOTAL + ' ]';
+    } else {
+      stepCounter.textContent = '';
+    }
+  }
+
+  function showSlide(index) {
+    slides.forEach((s, i) => {
+      s.classList.remove('active', 'exit-up');
+      if (i < index) s.classList.add('exit-up');
+    });
+    confirmSlide.classList.remove('active');
+
+    if (index >= TOTAL) {
+      const firstName = answers['firstName'] || 'Operative';
+      document.getElementById('confirm-title').textContent = 'Mission Complete, ' + firstName + '!';
+      confirmSlide.classList.add('active');
+      updateProgress(TOTAL);
+      return;
+    }
+
+    const slide = slides[index];
+    slide.classList.add('active');
+    updateProgress(index);
+
+    setTimeout(() => {
+      const input = slide.querySelector('.q-input, .q-textarea');
+      if (input) input.focus();
+      else {
+        const chip = slide.querySelector('.chip');
+        if (chip) chip.focus();
+      }
+    }, 80);
+  }
+
+  function getSlideValue(index) {
+    const slide = slides[index];
+    const input = slide.querySelector('.q-input, .q-textarea');
+    if (input) return input.value.trim();
+    const chipGroup = slide.querySelector('.chip-group');
+    if (chipGroup) {
+      const sel = chipGroup.querySelector('.chip.selected');
+      return sel ? sel.dataset.value : '';
+    }
+    return '';
+  }
+
+  function isOptional(index) {
+    return index === 11;
+  }
+
+  function validate(index) {
+    const val = getSlideValue(index);
+    const errEl = document.getElementById('err-' + index);
+    if (!isOptional(index) && !val) {
+      if (errEl) errEl.textContent = '⚠ This field is required — fill it in to advance.';
+      const slide = slides[index];
+      slide.classList.add('shake');
+      setTimeout(() => slide.classList.remove('shake'), 400);
+      return false;
+    }
+    if (errEl) errEl.textContent = '';
+    return true;
+  }
+
+  function advance() {
+    if (!validate(current)) return;
+
+    const slide = slides[current];
+    const input = slide.querySelector('.q-input, .q-textarea');
+    const chipGroup = slide.querySelector('.chip-group');
+    const field = (input || chipGroup)?.dataset?.field;
+
+    if (field) {
+      answers[field] = getSlideValue(current);
+    }
+
+    current++;
+    showSlide(current);
+  }
+
+  // Chip click handling
+  document.querySelectorAll('.chip-group').forEach(group => {
+    group.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        const errEl = group.closest('.slide').querySelector('.error-msg');
+        if (errEl) errEl.textContent = '';
+      });
+    });
+  });
+
+  // Continue buttons
+  document.querySelectorAll('.btn-continue').forEach(btn => {
+    btn.addEventListener('click', advance);
+  });
+
+  // Restart
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    Object.keys(answers).forEach(k => delete answers[k]);
+    slides.forEach(slide => {
+      slide.querySelectorAll('.q-input, .q-textarea').forEach(i => i.value = '');
+      slide.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      const err = slide.querySelector('.error-msg');
+      if (err) err.textContent = '';
+    });
+    current = 0;
+    showSlide(0);
+  });
+
+  // Keyboard: Enter on text inputs, Ctrl+Enter on textareas
+  document.addEventListener('keydown', (e) => {
+    if (current >= TOTAL) return;
+    const slide = slides[current];
+    const textarea = slide.querySelector('.q-textarea');
+
+    if (e.key === 'Enter') {
+      if (textarea) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          advance();
+        }
+      } else {
+        e.preventDefault();
+        advance();
+      }
+    }
+  });
+
+  // Chip keyboard: Enter/Space selects chip without advancing
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        chip.click();
+      }
+    });
+  });
+
+  // Init
+  showSlide(0);
+</script>
+</body>
+</html>

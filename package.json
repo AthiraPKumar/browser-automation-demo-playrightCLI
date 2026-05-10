@@ -1,0 +1,25 @@
+{
+  "name": "browser-automation-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "codegen": "playwright codegen",
+    "screenshot": "ts-node scripts/screenshot.ts",
+    "demo": "ts-node scripts/demo.ts",
+    "serve": "ts-node scripts/serve.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
