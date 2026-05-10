@@ -90,8 +90,6 @@ Starts a local server at `http://localhost:3000` with a 12-question onboarding f
 
 ### Google Maps scraper — dentists in Berlin
 
-![Google search results](dentists-berlin-search.png)
-![Google Maps results](dentists-berlin-maps.png)
 ![Scraped CSV data](dentists-berlin-csv.png)
 
 ---
