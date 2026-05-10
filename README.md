@@ -7,11 +7,11 @@ It can take screenshots, fill out forms, scrape public data, and run automated t
 
 ## What's Inside
 
-| Folder / File | What it does |
-|---|---|
-| `scripts/` | One-off automation tasks you run directly |
-| `tests/` | Automated tests that check things work correctly |
-| `public/` | A sample multi-step web form used for testing |
+| Folder / File | What it does                                     |
+| ------------- | ------------------------------------------------ |
+| `scripts/`    | One-off automation tasks you run directly        |
+| `tests/`      | Automated tests that check things work correctly |
+| `public/`     | A sample multi-step web form used for testing    |
 
 ---
 
@@ -21,16 +21,19 @@ It can take screenshots, fill out forms, scrape public data, and run automated t
 Download from [nodejs.org](https://nodejs.org) if you don't have it.
 
 **Step 2 — Clone this repo and open the folder**
+
 ```bash
 git clone <your-repo-url>
 cd browser-automation-demo
 ```
 
 **Step 3 — Install dependencies**
+
 ```bash
 npm install
 npx playwright install
 ```
+
 This downloads Playwright and the browsers it controls (Chrome, Firefox, Safari).
 
 ---
@@ -38,56 +41,89 @@ This downloads Playwright and the browsers it controls (Chrome, Firefox, Safari)
 ## What You Can Do
 
 ### Take a screenshot of any website
+
 ```bash
 npm run screenshot https://example.com output.png
 ```
+
 Opens a headless browser, visits the URL, saves a full-page screenshot.
 
 ### Run the demo automation
+
 ```bash
 npm run demo
 ```
+
 Opens the Playwright docs site, clicks around, and saves screenshots at each step.
 
 ### Scrape dentist contacts from Google Maps
+
 ```bash
 npx ts-node scripts/dentists-berlin.ts
 ```
+
 Searches Google Maps for dentists in Berlin, clicks each result, and saves the contact list to:
+
 - `dentists-berlin.json` — structured data
 - `dentists-berlin.csv` — open in Excel / Google Sheets
 
 ### Serve the sample web form
+
 ```bash
 npm run serve
 ```
+
 Starts a local server at `http://localhost:3000` with a 12-question onboarding form.
+
+---
+
+## Screenshots
+
+### Onboarding form automation
+
+![Form — initial state](screenshots/explore-01-initial.png)
+![Form — chip validation error](screenshots/explore-07-chip-validation-error.png)
+![Form — chip selected](screenshots/explore-08-q5-chip-selected.png)
+![Form — confirmation screen](screenshots/explore-16-confirmation.png)
+
+---
+
+### Google Maps scraper — dentists in Berlin
+
+![Google search results](dentists-berlin-search.png)
+![Google Maps results](dentists-berlin-maps.png)
+![Scraped CSV data](dentists-berlin-csv.png)
 
 ---
 
 ## How to Run Tests
 
 **Run all tests (Chrome + Firefox + Safari in parallel)**
+
 ```bash
 npm test
 ```
 
 **Run with a visible browser window so you can watch**
+
 ```bash
 npm run test:headed
 ```
 
 **Open the visual test explorer**
+
 ```bash
 npm run test:ui
 ```
 
 **Run just one test file**
+
 ```bash
 npx playwright test tests/form.spec.ts
 ```
 
 **Run on one browser only**
+
 ```bash
 npx playwright test --project=chromium
 ```
@@ -140,12 +176,12 @@ browser-automation-demo/
 
 ## Quick Reference
 
-| Command | What it does |
-|---|---|
-| `npm test` | Run all tests |
-| `npm run test:headed` | Run tests with visible browser |
-| `npm run test:ui` | Open visual test runner |
-| `npm run screenshot <url>` | Screenshot a webpage |
-| `npm run demo` | Run the demo script |
-| `npm run serve` | Serve the sample form locally |
-| `npm run codegen` | Record browser actions as code |
+| Command                    | What it does                   |
+| -------------------------- | ------------------------------ |
+| `npm test`                 | Run all tests                  |
+| `npm run test:headed`      | Run tests with visible browser |
+| `npm run test:ui`          | Open visual test runner        |
+| `npm run screenshot <url>` | Screenshot a webpage           |
+| `npm run demo`             | Run the demo script            |
+| `npm run serve`            | Serve the sample form locally  |
+| `npm run codegen`          | Record browser actions as code |
